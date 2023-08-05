@@ -1,4 +1,4 @@
-Template for the Read the Docs tutorial
+EMCCD QE Analysis Pipeline for Hamden UV/VIS Monochromator setup
 =======================================
 
 This GitHub template includes fictional Python library
