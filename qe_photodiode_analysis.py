@@ -194,11 +194,11 @@ def generate_qe_photodiode_db(mc_photodiode_scan_path,qe_photodiode_scan_path):
                 median_cal=np.median(image_data.Ch1)
                 median_data.append(median_cal)
                 # print(median_cal)
-                pickoff_data.append(currenttophotonrate(wl,median_cal-dark_cal*pickoff_area/main_photo_area).decompose().value)
-                mainport_estimate.append(MbyS_wl_ratio*(currenttophotonrate(wl,median_cal-dark_cal*pickoff_area/main_photo_area).decompose().value))
-                pickoff_data_per_pix.append((((1/npixels_sideport)*currenttophotonrate(wl,median_cal-dark_cal*pickoff_area/main_photo_area))).decompose().value)
-                mainport_estimate_per_pix.append((MbyS_wl_ratio*((1/npixels_mainport)*currenttophotonrate(wl,median_cal-dark_cal*pickoff_area/main_photo_area))).decompose().value)
-                print(f'median flux for {wl}nm={currenttophotonrate(wl,median_cal-dark_cal*pickoff_area/main_photo_area).decompose().value}')
+                pickoff_data.append(currenttophotonrate(wl,median_cal-dark_cal).decompose().value)
+                mainport_estimate.append(MbyS_wl_ratio*(currenttophotonrate(wl,median_cal-dark_cal).decompose().value))
+                pickoff_data_per_pix.append((((1/npixels_sideport)*currenttophotonrate(wl,median_cal-dark_cal))).decompose().value)
+                mainport_estimate_per_pix.append((MbyS_wl_ratio*((1/npixels_mainport)*currenttophotonrate(wl,median_cal-dark_cal))).decompose().value)
+                print(f'median flux for {wl}nm={currenttophotonrate(wl,median_cal-dark_cal).decompose().value}')
 
     # emccd_pixels=pickoff_area/EMCCD_pixel_area
     fig,ax=plt.subplots(figsize=(18,12))
