@@ -9,6 +9,7 @@ import numpy as np
 import os
 import glob
 import pandas as pd
+import matplotlib.pyplot as plt
 from scipy import interpolate
 """Adding Asthetics to the plot"""
 plt.rc('font', size=15)          # controls default text sizes
@@ -24,10 +25,13 @@ plt.rc('legend', fontsize=15)    # legend fontsize
 plt.rcParams['figure.figsize'] = [18, 22]  # set plotsize
 
 """ MC photiodiode scan holds database with the data from the charachterisation of the monochromator"""
+
 global mc_photodiode_scan_path,qe_photodiode_scan_path,photo_diode_AbyW_response_path
-mc_photodiode_scan_path=r'D:\Nuvu_data\w18d10\qe_07112023\qe_07112023\MC_Charachterisation\May PTC Data\master_df_validated_052023.csv'
-qe_photodiode_scan_path=r'D:\Nuvu_data\w18d10\qe_07112023\qe_07112023\qe5'
-photo_diode_AbyW_response_path=r'D:\Monochromator_data\vuvSiresponse_UV_PhotonResponse_plot-data.csv'
+
+
+mc_photodiode_scan_path=r'/media/nuvu_setup/Data_Volume/wl18d10_data/MC_Charachterisation/May PTC Data/master_MC_characterization_052023.csv'
+qe_photodiode_scan_path=r'/media/nuvu_setup/Data_Volume/wl18d10_data/qe_07112023/qe5'
+photo_diode_AbyW_response_path=r'/media/nuvu_setup/Data_Volume/wl18d10_data/MC_Charachterisation/vuvSiresponse_UV_PhotonResponse_plot-data.csv'
 
 def get_photodide_AW_response(wl,path=photo_diode_AbyW_response_path): 
     """ Get the Amperes per Watts conversion factor for the photodidoe for the given waelenght from a csv file

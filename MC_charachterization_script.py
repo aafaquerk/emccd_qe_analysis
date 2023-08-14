@@ -44,46 +44,75 @@ plt.rc('ytick.minor', size=10)    # size of the tick markers
 plt.rc('legend', fontsize=15)    # legend fontsize
 plt.rcParams['figure.figsize'] = [24, 12]  # set plotsize
 
-global data_path, raw_db_filename,master_db_filename
+global data_path, raw_db_filename,master_db_filename, photo_diode_AbyW_response_path
 
 """Change these path and fileneames to your  dataset"""
-data_path=r'D:\Nuvu_data\w18d10\qe_07112023\qe_07112023\MC_Charachterisation\May PTC Data'
+data_path=r'/media/nuvu_setup/Data_Volume/wl18d10_data/MC_Charachterisation/May PTC Data'
 # raw db has the dark measurements saved with 0 wavelength. Need to fix this in the future to avoid divide by zero error 
-raw_db_filename=r'D:\Nuvu_data\w18d10\qe_07112023\qe_07112023\MC_Charachterisation\May PTC Data\raw_MC_characterization_052023.csv'
+raw_db_filename=r'/media/nuvu_setup/Data_Volume/wl18d10_data/MC_Charachterisation/May PTC Data/raw_MC_characterization_052023.csv'
 # master db the dark corrected lamp data is coverted to photon count rate. Dark data is not recorded in this data frame to avoid divide by zero error. Need to fix this in the future and set a "wavelenght" for dark data for corresponding wavelength around which dark was taken.  
-master_db_filename=r'D:\Nuvu_data\w18d10\qe_07112023\qe_07112023\MC_Charachterisation\May PTC Data\master_MC_characterization_052023.csv'
+master_db_filename=r'/media/nuvu_setup/Data_Volume/wl18d10_data/MC_Charachterisation/May PTC Data/master_MC_characterization_052023.csv'
 
-def get_photodide_AW_response(wl):
-    """
-    Calculate the photodiode's A/W response at a given wavelength using interpolation.
+photo_diode_AbyW_response_path=r'/media/nuvu_setup/Data_Volume/wl18d10_data/MC_Charachterisation/vuvSiresponse_UV_PhotonResponse_plot-data.csv'
 
-    Parameters:
-    wl (float): Input wavelength in nanometers.
-
+def get_photodide_AW_response(wl,path=photo_diode_AbyW_response_path): 
+    """ Get the Amperes per Watts conversion factor for the photodidoe for the given waelenght from a csv file
+    Args:
+        wl (float): Input wavelength in nm
+        path (str): Path to the file that contains the AbyW charachteristics of the Photodiode
     Returns:
-    float: A/W response in Amperes per Watt.
+        float: Ouput A/W in Amperes per Watt for the input wavelenght
     """
-    # Read VUV Si response data from a CSV file
-    VUV = pd.read_csv('vuvSiresponse_UV_PhotonResponse_plot-data.csv')
-    
-    # Extract A/W response values from the data
+
+    VUV = pd.read_csv(path)
     AW = pd.DataFrame(VUV, columns=['y'])
     AW['y'] = AW['y'].astype('float')
     
-    # Extract wavelength values from the data
     lamb = pd.DataFrame(VUV, columns=['x'])
     lamb['x'] = lamb['x'].astype('float')
-    
-    # Define a set of quantile knots for spline interpolation
+    # if (wl>max(lamb.x))|(wl<min(lamb.x)): 
+    #     print("Input wavlength greater than Max available data. The output is not be reliable fit")
+    #     return 0        
+    #spline
     knot_numbers = 20
-    x_new = np.linspace(0, 1, knot_numbers + 2)[1:-1]
+    x_new = np.linspace(0, 1, knot_numbers+2)[1:-1]
     q_knots = np.quantile(lamb, x_new) 
-    
-    # Perform spline interpolation using BSpline
-    t, c, k = interpolate.splrep(lamb, AW, t=q_knots, s=1)
-    photodiode_resfit = interpolate.BSpline(t, c, k)(wl)
-    
+    t,c,k = interpolate.splrep(lamb, AW, t=q_knots, s=1)
+    photodiode_resfit = interpolate.BSpline(t,c,k)(wl)
     return photodiode_resfit
+
+
+# def get_photodide_AW_response(wl):
+#     """
+#     Calculate the photodiode's A/W response at a given wavelength using interpolation.
+
+#     Parameters:
+#     wl (float): Input wavelength in nanometers.
+
+#     Returns:
+#     float: A/W response in Amperes per Watt.
+#     """
+#     # Read VUV Si response data from a CSV file
+#     VUV = pd.read_csv('vuvSiresponse_UV_PhotonResponse_plot-data.csv')
+    
+#     # Extract A/W response values from the data
+#     AW = pd.DataFrame(VUV, columns=['y'])
+#     AW['y'] = AW['y'].astype('float')
+    
+#     # Extract wavelength values from the data
+#     lamb = pd.DataFrame(VUV, columns=['x'])
+#     lamb['x'] = lamb['x'].astype('float')
+    
+#     # Define a set of quantile knots for spline interpolation
+#     knot_numbers = 20
+#     x_new = np.linspace(0, 1, knot_numbers + 2)[1:-1]
+#     q_knots = np.quantile(lamb, x_new) 
+    
+#     # Perform spline interpolation using BSpline
+#     t, c, k = interpolate.splrep(lamb, AW, t=q_knots, s=1)
+#     photodiode_resfit = interpolate.BSpline(t, c, k)(wl)
+    
+#     return photodiode_resfit
 
 def currenttophotonrate(wl,current):
     """This function converts the measured signed photocurrent (in Amperes) of the Mcpherosn VUV photodiode measured using a picoammeter at a given wavelength (in nanometers) to photon count rate (photons/s) 
@@ -314,6 +343,7 @@ def update_lamp_database(master_df, master_db_filename=r'D:\Nuvu_data\w18d10\qe_
     # Save the updated DataFrame to a CSV file
     master_df.to_csv(master_db_filename, index=None)
     print(f"Master Database for the Monochromator charachterisation is save as: {master_db_filename}")
+    
     return master_df
 
 def main():

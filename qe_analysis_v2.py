@@ -61,14 +61,15 @@ detector_name="w18d10"
 conversion_gain=1.364 #e-/ADU
 
 """Location of the data files"""
-dir_path=r'D:\Nuvu_data\w18d10\qe_07112023\qe_07112023\qe5' ## folder with exposure, dark and bias taken during QE scans. For each wavelength we have one dark, one flat and one bias. 
-path_photodidode_database=r'D:\Nuvu_data\w18d10\qe_07112023\qe_07112023\qe5\Photodiode_db_qe_07112023_qe5.csv' ##filepath to database wiht measurements for photodiode at each wavelength. The current for the sideport photodidoe is logged through the entire exposure median dark and neduab count rate are extracted from the raw data using a seperate script. The photodidoe raw data is also located in the dir_path folder. 
+dir_path=r'/media/nuvu_setup/Data_Volume/wl18d10_data/qe_07112023/qe5' ## folder with exposure, dark and bias taken during QE scans. For each wavelength we have one dark, one flat and one bias. 
+path_photodidode_database=r'/media/nuvu_setup/Data_Volume/wl18d10_data/qe_07112023/qe5/Photodiode_db_qe_07112023_qe5.csv' ##filepath to database wiht measurements for photodiode at each wavelength. The current for the sideport photodidoe is logged through the entire exposure median dark and neduab count rate are extracted from the raw data using a seperate script. The photodidoe raw data is also located in the dir_path folder. 
 
 
 """Detector Meta data"""
-path_detector_metadata=r"D:\Nuvu_data\w18d10\detector_metadata_w18d10\w18d10_metadata.csv" # specific information related to detector under test, eg detector name, lot number, number of coatings, processing history. 
-path_coat_regions_metadata=r"D:\Nuvu_data\w18d10\detector_metadata_w18d10\w18d10_coat_regions_metadata.csv" # database of the different block coatings on the block coated detectors. 
-path_analysis_regions_metadata=r"D:\Nuvu_data\w18d10\detector_metadata_w18d10\w18d10_analysis_regions_metadata.csv" # database of the different regions that will be extracted for QE analysis. These can be modified by modifying the csv file to set any arbitrary rectangular region for analyiss. In future version, we will have regions selected from pyds9 and astropy regions.  
+path_detector_metadata_folder=r"/media/nuvu_setup/Data_Volume/wl18d10_data/detector_metadata_w18d10"
+path_detector_metadata= os.path.join(path_detector_metadata_folder,"w18d10_metadata.csv") # specific information related to detector under test, eg detector name, lot number, number of coatings, processing history. 
+path_coat_regions_metadata=os.path.join(path_detector_metadata_folder,"w18d10_coat_regions_metadata.csv") # database of the different block coatings on the block coated detectors. 
+path_analysis_regions_metadata=os.path.join(path_detector_metadata_folder,"w18d10_analysis_regions_metadata.csv") # database of the different regions that will be extracted for QE analysis. These can be modified by modifying the csv file to set any arbitrary rectangular region for analyiss. In future version, we will have regions selected from pyds9 and astropy regions.  
 
 """File management: All figurees stored in figs folder in the same parent folder as the raw data. The regiosn folder is used to store images with the different regions that have been extracted for analysis"""
 dir_region_figs=os.path.join(dir_path,r'figs\regions')
@@ -108,7 +109,9 @@ def generate_qe_db(dir_path):
     log_file=r'scan_log.csv' # name of the log file assocaited with each scan created by the monochromator scan script
     log_path=os.path.join(dir_path,log_file) #full path to the log file 
     images_db=pd.read_csv(log_path,index_col=0) # reading the log into a database 
-    file_list=glob.glob(os.path.join(dir_path,'*.fits.Z')) #getting list of all files with the fits.Z extentions created by the nuvu acquisition scripts. 
+    file_list=glob.glob(os.path.join(dir_path,'*.fits*'))#getting list of all files with the fits.Z extentions created by the nuvu acquisition scripts. 
+    file_list.sort()
+    print(file_list) #sorting because glob doesnot always return files in the right order. 
     if len(file_list)!=np.shape(images_db)[0]: # check if number of fits files in the fodler are same as the number of fits files in the scan. 
         print(f"The number of files in folder is {len(file_list)} While the number of files in database are {np.shape(images_db)[0]}.")
         start_index= len(file_list)-np.shape(images_db)[0] #the file numbers may differ because of some test images taken before the scan was started. The start index is updated to start by skiping the first few files. 
@@ -116,7 +119,7 @@ def generate_qe_db(dir_path):
         images_db['filenames']=file_list # storing the filenlist in the database this stores the full path of the files in the database 
     else: 
         images_db['filenames']=file_list#  storing the filenlist in the database this stores the full path of the files in the database 
-
+        print(file_list)
     # db_path=str(Path(dir_path).parents[0])
     db_path=dir_path # setting the databse torage path to same as the dir_path
     #extrating exposure images only, bias only, dark only images to a separate databases 
@@ -236,10 +239,7 @@ def plot_regions_cutout(regions_list,wl_implot,bias_db,dark_db,Exposure_db):
     
     norm_max=10000
     norm_min=1000
-    norm=ImageNormalize(vmin=norm_min, 
-                        vmax=norm_max, 
-                        #stretch=SqrtStretch()
-                        )
+    norm=ImageNormalize(vmin=norm_min,vmax=norm_max)
     im=ax.imshow((imagef),cmap='magma',norm=norm,origin='lower')
     cbar=fig.colorbar(im,extend='max')
     for idx,region in enumerate(regions_list): 
@@ -255,6 +255,9 @@ def plot_regions_cutout(regions_list,wl_implot,bias_db,dark_db,Exposure_db):
     ax.set_xlabel("y pixels")
     fig_filename=os.path.join(f"{dir_region_figs}",f"{scan_name}_{detector_name}_{wl_implot}nm.png")
     plt.savefig(fig_filename)
+    plt.close()
+    plt.cla()
+    plt.clf()
 
 def run_qe_analysis(bias_db,dark_db,images_db,Exposure_db):
     """This scripts loops over ther region database and extracts the different regions for QE analysis form fits images. For each wavelength the regions are extracted and reduced by subracting the bias. For each region we caculate the mean flux and noise (std of the bias subracted signal). QE is caculated using 
@@ -356,17 +359,15 @@ def run_qe_analysis(bias_db,dark_db,images_db,Exposure_db):
         print(f"QE Plots saved as:{os.path.join(dir_path,'qe.png')}")
 
 def main(): 
-    # generate the databases for the fits files     
+    # generate the databases for the fits files   
     images_db,Exposure_db,bias_db,dark_db=generate_qe_db(dir_path)
     # run the QE analysis 
     run_qe_analysis(bias_db,dark_db,images_db,Exposure_db)
-    
-    
 if __name__ == "__main__":
     main()
     
     
-""" Deprecated helper fulctions"""
+""" Deprecated helper functions"""
 # def set_regions(Region,coat,region_centx,region_centy,region_wx,region_wy):
 #     """_summary_
 
