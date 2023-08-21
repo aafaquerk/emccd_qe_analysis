@@ -3,5 +3,5 @@ EMCCD QE Analysis Pipeline for Hamden UV/VIS Monochromator Setup
 
 
 .. image:: See_me.jpg
-  :width: 400
+  :width: 800
   :alt: Alternative text
